@@ -81,8 +81,8 @@ replace_char() {
 
 update_tail() {
         # remove last segment and then update tail
-        snake_body_xy=$(echo "$snake_tail_xy" |  awk -F 'x' 'NF>1{sub(/x[^x]*$/,"")}1')
-        snake_body_xy="x${snake_x}y${snake_y} $snake_tail_xy"
+        snake_body_xy=$(echo "$snake_body_xy" |  awk -F 'x' 'NF>1{sub(/x[^x]*$/,"")}1')
+        snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
 }
 
 draw_snake() {
@@ -170,7 +170,7 @@ check_collition() {
                 echo "GAME OVER"
                 exit 0
         elif [ "$snake_x" -eq "$fruit_x" ] && [ "$snake_y" -eq "$fruit_y" ]; then
-                snake_body_xy="x${snake_x}y${snake_y} $snake_tail_xy"
+                snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
                 generate_fruit
         fi
 }
