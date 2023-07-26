@@ -15,6 +15,8 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 # -----------------------------------------------------------------------------
 
+# TODO(future me): Clean the messy code and rename things like (replace_char) to (replace_char_at_index)
+
 #ORIGINAL_IFS="$IFS"
 saved_settings="$(stty -g)" # Save current terminal settings to restore them later
 
@@ -63,6 +65,7 @@ tail_y=0
 snake_body_xy=""
 
 direction="RIGHT"
+canvas=""
 matrix=""
 pressed_key=""
 #score=0
@@ -79,14 +82,22 @@ replace_char() {
         fi
 }
 
-update_tail() {
+update_body() {
         # remove last segment and then update tail
-        snake_body_xy=$(echo "$snake_body_xy" |  awk -F 'x' 'NF>1{sub(/x[^x]*$/,"")}1')
-        snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
+        if [ -n "$snake_body_xy" ]; then
+                snake_body_xy=$(echo "$snake_body_xy" | awk -F 'x' 'NF>1{sub(/x[^x]*$/,"")}1')
+                snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
+        else
+                # keep track of the previus position of the head
+                # while there is not body
+                tail_x="$snake_x"
+                tail_y="$snake_y"
+        fi
 }
 
 draw_snake() {
         str="$snake_body_xy"
+
         # Draw snake body 
         while [ -n "$str" ]; do
                 case "$str" in
@@ -119,10 +130,10 @@ draw_game() {
                         for _ in $(seq 0 $((GRID_WIDTH - 1))); do
                                 matrix="${matrix}$MATRIX_CHAR"
                         done
+
                         matrix="${matrix}\n"
                 done
         else
-                # Remove the last body segment to simulate movement
                 last_segment_idx=$((tail_y * (GRID_WIDTH + 2) + tail_x))
                 matrix=$(replace_char "$matrix" "$last_segment_idx" "$MATRIX_CHAR")
         fi
@@ -166,7 +177,12 @@ generate_fruit() {
 }
 
 check_collition() {
+        local_snake_xy="x${snake_x}y${snake_y}"
+
         if [ "$snake_x" -lt 0 ] || [ "$snake_x" -ge "$GRID_WIDTH" ] || [ "$snake_y" -lt 0 ] || [ "$snake_y" -ge "$GRID_HEIGHT" ]; then
+                echo "GAME OVER"
+                exit 0
+        elif test "${snake_body_xy#*$local_snake_xy}" != "${snake_body_xy}"; then
                 echo "GAME OVER"
                 exit 0
         elif [ "$snake_x" -eq "$fruit_x" ] && [ "$snake_y" -eq "$fruit_y" ]; then
@@ -187,14 +203,18 @@ read_char() {
         echo "$char"
 }
 
+init_game() {
+        generate_fruit # Spawn the fruit in a random position
+}
+init_game
+
 # Main loop
-generate_fruit # Spawn the fruit in a random position
 while true; do
         draw_game
 
-        check_collition
-
         pressed_key=$(read_char 0.1)
+        update_body
         move_snake "$pressed_key"
-        update_tail
+
+        check_collition
 done
