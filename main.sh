@@ -17,6 +17,7 @@
 
 # TODO(future me): Clean the messy code and rename things like (replace_char) to (replace_char_at_index)
 # TODO: Prevent the snake from moving in the opposite direction of its current direction
+# TODO: Find a better way to redraw the snake body. Maybe redraw only the tail and the segment next to the head.
 
 #ORIGINAL_IFS="$IFS"
 saved_settings="$(stty -g)" # Save current terminal settings to restore them later
@@ -64,18 +65,19 @@ snake_x="$START_BOARD_X"
 snake_y="$START_BOARD_Y"
 fruit_x=0
 fruit_y=0
-tail_x=0
-tail_y=0
+tail_x="$START_BOARD_X"
+tail_y="$START_BOARD_Y"
+score_x="$START_BOARD_X"
+score_y=$((START_BOARD_Y - 2))
 
 # since POSIX does not specify arrays, the body will be represent as a string
 # from head to tail example: [xy: "x0y1 x1y0 x2y3 x5y5"]
 snake_body_xy=""
 
 direction="RIGHT"
-canvas=""
 matrix=""
 pressed_key=""
-#score=0
+score=0
 
 # TODO: Try to use a sub-shell for the whole live of the program to read input without blocking.
 #       If not possible fix forced exit ( ctr-c does not work correctly )
@@ -87,6 +89,28 @@ read_char() {
         char=$(sh -ic "exec 3>&1 2>/dev/null; { cat 1>&3; kill 0; } | { sleep $1; kill 0; }")
 
         echo "$char"
+}
+
+draw_text() {
+        local_canvas="$1"
+        str="$2"
+        local_x="$3"
+        local_y="$4"
+
+        i=0
+        while [ -n "$str" ]; do
+                char="${str%"${str#?}"}" # extract first char
+
+                text_idx=$((local_y * (SCREEN_WIDTH + 2) + local_x))
+                local_canvas=$(replace_char "$local_canvas" "$text_idx" "$char")
+
+                str="${str#?}" # remove first char
+                local_x=$((local_x + 1))
+
+                i=$((i + 1))
+        done
+
+        printf "%s" "$local_canvas"
 }
 
 replace_char() {
@@ -120,6 +144,10 @@ draw_centered_matrix() {
         done
 }
 
+draw_interface() {
+        matrix=$(draw_text "$matrix" "Score: $score" "$score_x" "$score_y")
+}
+
 update_body() {
         # remove last segment and then update tail
         if [ -n "$snake_body_xy" ]; then
@@ -136,7 +164,7 @@ update_body() {
 draw_snake() {
         str="$snake_body_xy"
 
-        # Draw snake body 
+        # Draw snake body
         while [ -n "$str" ]; do
                 case "$str" in
                         *" "*)
@@ -171,6 +199,7 @@ draw_game() {
         matrix=$(replace_char "$matrix" "$fruit_idx" "$FRUIT_CHAR")
 
         draw_snake
+        draw_interface
         printf -- "$matrix"
 }
 
@@ -215,6 +244,7 @@ check_collition() {
                 exit 0
         elif [ "$snake_x" -eq "$fruit_x" ] && [ "$snake_y" -eq "$fruit_y" ]; then
                 snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
+                score=$((score + 1))
                 generate_fruit
         fi
 }
