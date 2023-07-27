@@ -17,7 +17,6 @@
 
 # TODO(future me): Clean the messy code and rename things like (replace_char) to (replace_char_at_index)
 # TODO: Prevent the snake from moving in the opposite direction of its current direction
-# TODO: Find a better way to redraw the snake body. Maybe redraw only the tail and the segment next to the head.
 
 #ORIGINAL_IFS="$IFS"
 saved_settings="$(stty -g)" # Save current terminal settings to restore them later
@@ -97,7 +96,6 @@ draw_text() {
         local_x="$3"
         local_y="$4"
 
-        i=0
         while [ -n "$str" ]; do
                 char="${str%"${str#?}"}" # extract first char
 
@@ -106,8 +104,6 @@ draw_text() {
 
                 str="${str#?}" # remove first char
                 local_x=$((local_x + 1))
-
-                i=$((i + 1))
         done
 
         printf "%s" "$local_canvas"
@@ -162,18 +158,9 @@ update_body() {
 }
 
 draw_snake() {
-        str="$snake_body_xy"
-
         # Draw snake body
-        while [ -n "$str" ]; do
-                case "$str" in
-                        *" "*)
-                                tail_xy="${str%%' '*}"
-                        ;;
-                        *)
-                                tail_xy="$str"
-                        ;;
-                esac
+        if [ -n "$snake_body_xy" ]; then
+                tail_xy=${snake_body_xy%%" "*}
 
                 tail_x=$(echo "$tail_xy" | cut -d'x' -f2 | cut -d'y' -f1)
                 tail_y=$(echo "$tail_xy" | cut -d'y' -f2 | cut -d'x' -f1)
@@ -182,8 +169,11 @@ draw_snake() {
                 tail_idx=$((tail_y * (SCREEN_WIDTH + 2) + tail_x))
                 matrix=$(replace_char "$matrix" "$tail_idx" "$TAIL_CHAR")
 
-                str=${str#*" "}
-        done
+                tail_xy=$(echo "$snake_body_xy" | awk '{print $NF}')
+
+                tail_x=$(echo "$tail_xy" | cut -d'x' -f2 | cut -d'y' -f1)
+                tail_y=$(echo "$tail_xy" | cut -d'y' -f2 | cut -d'x' -f1)
+        fi
 
         head_idx=$((snake_y * (SCREEN_WIDTH + 2) + snake_x))
         matrix=$(replace_char "$matrix" "$head_idx" "$HEAD_CHAR")
@@ -250,6 +240,7 @@ check_collition() {
 }
 
 init_game() {
+        echo " Generating game canvas..."
         generate_fruit # Spawn the fruit in a random position
         init_canvas
         draw_centered_matrix
