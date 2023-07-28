@@ -4,7 +4,8 @@ Simple project of the classic snake game implemented in POSIX shell script.
 </br>
 
 ## Resources
-- [shellCheck](https://www.shellcheck.net/)
+- [Shell Check](https://www.shellcheck.net/)
+- [POSIX Standards](https://pubs.opengroup.org/onlinepubs/9699919799/)
 
 </br>
 </br>
