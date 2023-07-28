@@ -79,11 +79,10 @@ score=0
 
 ###################### FUNCTIONS ######################
 read_char() {
-        # Set the terminal to raw mode to read single characters
-        stty -icanon -echo
+        # Set the terminal read single characters
+        stty -icanon -echo min 0 time 0
   
-        # https://unix.stackexchange.com/questions/10698/timing-out-in-a-shell-script#18711
-        char=$(sh -ic "exec 3>&1 2>/dev/null; { cat 1>&3; kill 0; } | { sleep $1; kill 0; }")
+        char=$(dd bs=1 count=1 2>/dev/null)
 
         echo "$char"
 }
@@ -369,7 +368,7 @@ init_game
 while true; do
         draw_game
 
-        pressed_key=$(read_char 0.1)
+        pressed_key=$(read_char)
         update_snake_body
         move_snake "$pressed_key"
 
