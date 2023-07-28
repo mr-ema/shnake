@@ -15,9 +15,6 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 # -----------------------------------------------------------------------------
 
-# TODO: Find a way to read input without blocking to improve performance 
-# TODO: If read does not block try to implement target fps
-
 SAVED_TTY_SETTINGS="$(stty -g)" # Save current terminal settings to restore them later
 
 cleanup() {
@@ -35,7 +32,9 @@ tput civis
 PROGRAM="SHNAKE"
 VERSION="1.0"
 
-WHITE_CANVAS=""
+BLANK_CANVAS=""
+TARGET_FPS=60
+FRAME_INTERVAL=$((1000 / TARGET_FPS))
 
 SCREEN_WIDTH=$(tput cols)
 SCREEN_HEIGHT=$(tput lines)
@@ -48,7 +47,7 @@ START_BOARD_Y=$((BOARD_HEIGHT / 2))
 END_BOARD_X=$((BOARD_WIDTH + START_BOARD_X))
 END_BOARD_Y=$((BOARD_HEIGHT + START_BOARD_Y))
 
-MATRIX_CHAR="."
+BOARD_CHAR="."
 HEAD_CHAR="O"
 TAIL_CHAR="o"
 FRUIT_CHAR="F"
@@ -261,7 +260,7 @@ draw_snake() {
 }
 
 draw_game_over() {
-        game_canvas="$WHITE_CANVAS"
+        game_canvas="$BLANK_CANVAS"
         local_msg="GAME OVER"
         local_msg_len=${#local_msg}
         center_x=$(( (BOARD_WIDTH / 2 + START_BOARD_X) - (local_msg_len / 2) - 1 ))
@@ -274,7 +273,7 @@ draw_game_over() {
 draw_game() {
         # Simulate movement
         last_segment_idx=$((tail_y * (SCREEN_WIDTH + 2) + tail_x))
-        game_canvas=$(set_char_at_index "$game_canvas" "$last_segment_idx" "$MATRIX_CHAR")
+        game_canvas=$(set_char_at_index "$game_canvas" "$last_segment_idx" "$BOARD_CHAR")
 
         # Draw fruit
         fruit_idx=$((fruit_y * (SCREEN_WIDTH + 2) + fruit_x))
@@ -324,14 +323,14 @@ generate_fruit() {
                 fruit_x=$((RANDOM % BOARD_WIDTH + START_BOARD_X))
                 fruit_y=$((RANDOM % BOARD_HEIGHT + START_BOARD_Y))
         else
-                current_time=$(date +%s%3N)
+                current_time=$(date +%s)
 
                 fruit_x=$((current_time % BOARD_WIDTH + START_BOARD_X))
                 fruit_y=$((current_time % BOARD_HEIGHT + START_BOARD_Y))
         fi
 }
 
-check_collition() {
+check_collision() {
         local_snake_xy="x${snake_x}y${snake_y}"
 
         if [ "$snake_x" -lt "$START_BOARD_X" ] || [ "$snake_x" -ge "$END_BOARD_X" ] ||
@@ -353,24 +352,30 @@ init_game() {
         echo "$PROGRAM VERSION: $VERSION"
         echo ""
         echo "Generating game canvas..."
-        WHITE_CANVAS=$(generate_char_matrix " " "$SCREEN_HEIGHT" "$SCREEN_WIDTH")
+        BLANK_CANVAS=$(generate_char_matrix " " "$SCREEN_HEIGHT" "$SCREEN_WIDTH")
         echo "Game canvas generated"
         echo ""
 
         # Draw board
         echo "Generating game board..."
-        game_canvas=$(insert_submatrix "$WHITE_CANVAS" "$SCREEN_WIDTH" "$MATRIX_CHAR" "$START_BOARD_X" "$START_BOARD_Y" "$END_BOARD_X" "$END_BOARD_Y")
+        game_canvas=$(insert_submatrix "$BLANK_CANVAS" "$SCREEN_WIDTH" "$BOARD_CHAR" "$START_BOARD_X" "$START_BOARD_Y" "$END_BOARD_X" "$END_BOARD_Y")
         echo "Game board generated"
 }
 init_game
 
-# Main loop
 while true; do
-        draw_game
+        start_time=$(date +%s)  # Get the start time of the frame update
 
+        draw_game
         pressed_key=$(read_char)
         update_snake_body
         move_snake "$pressed_key"
+        check_collision
 
-        check_collition
+        end_time=$(date +%s)
+        elapsed_time=$((end_time - start_time))
+
+        # Calculate the time to sleep to achieve the target FPS
+        sleep_time=$((FRAME_INTERVAL - elapsed_time))
+        [ $sleep_time -gt 0 ] && sleep "$((sleep_time / 1000))"
 done
