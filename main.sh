@@ -41,6 +41,7 @@ SCREEN_WIDTH=$(tput cols)
 SCREEN_HEIGHT=$(tput lines)
 GRID_WIDTH=$((SCREEN_WIDTH / 2))
 GRID_HEIGHT=$((SCREEN_HEIGHT / 2))
+WHITE_CANVAS=""
 
 # This coordinates will center the board
 START_BOARD_X=$((GRID_WIDTH / 2))
@@ -123,14 +124,15 @@ replace_char() {
 init_canvas() {
         for _ in $(seq 0 $((SCREEN_HEIGHT - 1))); do
                 for _ in $(seq 0 $((SCREEN_WIDTH - 1))); do
-                        matrix="${matrix} "
+                        WHITE_CANVAS="${WHITE_CANVAS} "
                 done
 
-                matrix="${matrix}\n"
+                WHITE_CANVAS="${WHITE_CANVAS}\n"
         done
 }
 
 draw_centered_matrix() {
+        matrix="$WHITE_CANVAS"
         for y in $(seq $((START_BOARD_Y)) $((END_BOARD_Y - 1))); do
                 for x in $(seq $((START_BOARD_X)) $((END_BOARD_X - 1))); do
                         matrix_idx=$((y * (SCREEN_WIDTH + 2) + x))
@@ -176,6 +178,17 @@ draw_snake() {
 
         head_idx=$((snake_y * (SCREEN_WIDTH + 2) + snake_x))
         matrix=$(replace_char "$matrix" "$head_idx" "$HEAD_CHAR")
+}
+
+draw_game_over() {
+        matrix="$WHITE_CANVAS"
+        local_msg="GAME OVER"
+        local_msg_len=${#local_msg}
+        center_x=$(( (GRID_WIDTH / 2 + START_BOARD_X) - (local_msg_len / 2) - 1 ))
+        center_y=$((GRID_HEIGHT / 2 + START_BOARD_Y))
+
+        matrix=$(draw_text "$matrix" "$local_msg" "$center_x" "$center_y")
+        printf -- "$matrix"
 }
 
 draw_game() {
@@ -242,10 +255,10 @@ check_collition() {
         local_snake_xy="x${snake_x}y${snake_y}"
 
         if [ "$snake_x" -lt "$START_BOARD_X" ] || [ "$snake_x" -ge "$END_BOARD_X" ] || [ "$snake_y" -lt "$START_BOARD_Y" ] || [ "$snake_y" -ge "$END_BOARD_Y" ]; then
-                echo "GAME OVER"
+                draw_game_over
                 exit 0
         elif test "${snake_body_xy#*$local_snake_xy}" != "${snake_body_xy}"; then
-                echo "GAME OVER"
+                draw_game_over
                 exit 0
         elif [ "$snake_x" -eq "$fruit_x" ] && [ "$snake_y" -eq "$fruit_y" ]; then
                 snake_body_xy="x${snake_x}y${snake_y} $snake_body_xy"
