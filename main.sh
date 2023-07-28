@@ -28,7 +28,7 @@ trap cleanup QUIT
 trap cleanup INT 
 tput civis
 
-###################### CONSTANTS ######################
+###################### DEFAULT VALUES ######################
 PROGRAM="SHNAKE"
 VERSION="1.0"
 
@@ -75,6 +75,21 @@ snake_body_xy=""
 direction="RIGHT"
 pressed_key=""
 score=0
+
+###################### OVERWRITE DEFAULT VALUES ######################
+while [ $# -gt 0 ]; do
+        case "$1" in
+                --set-target-fps=*)
+                        TARGET_FPS="${1#*=}"
+                        FRAME_INTERVAL=$((1000 / TARGET_FPS))
+                        shift 1
+                ;;
+                *)
+                        echo "Unknown option: $1"
+                        exit 1
+                ;;
+        esac
+done
 
 ###################### FUNCTIONS ######################
 read_char() {
@@ -349,7 +364,7 @@ init_game() {
         generate_fruit # Spawn the fruit in a random position
 
         # init canvas
-        echo "$PROGRAM VERSION: $VERSION"
+        echo "$PROGRAM v$VERSION"
         echo ""
         echo "Generating game canvas..."
         BLANK_CANVAS=$(generate_char_matrix " " "$SCREEN_HEIGHT" "$SCREEN_WIDTH")
