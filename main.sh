@@ -16,7 +16,6 @@
 # -----------------------------------------------------------------------------
 
 # TODO(future me): Clean the messy code and rename things like (replace_char) to (replace_char_at_index)
-# TODO: Prevent the snake from moving in the opposite direction of its current direction
 
 #ORIGINAL_IFS="$IFS"
 saved_settings="$(stty -g)" # Save current terminal settings to restore them later
@@ -197,10 +196,26 @@ move_snake() {
         pressed_key=$1
 
         case "$pressed_key" in
-                "$LEFT_KEY") direction="LEFT";;
-                "$UP_KEY") direction="UP";;
-                "$RIGHT_KEY") direction="RIGHT";;
-                "$DOWN_KEY") direction="DOWN";;
+                "$LEFT_KEY")
+                        if [ "$direction" != "RIGHT" ]; then
+                                direction="LEFT"
+                        fi
+                ;;
+                "$RIGHT_KEY")
+                        if [ "$direction" != "LEFT" ]; then
+                                direction="RIGHT"
+                        fi
+                ;;
+                "$UP_KEY")
+                        if [ "$direction" != "DOWN" ]; then
+                                direction="UP"
+                        fi
+                ;;
+                "$DOWN_KEY")
+                        if [ "$direction" != "UP" ]; then
+                                direction="DOWN"
+                        fi
+                ;;
         esac
 
         case "${direction}" in
