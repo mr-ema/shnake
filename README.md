@@ -15,7 +15,7 @@ Simple project of the classic snake game implemented in POSIX shell script.
 - [x] Snake grow longer when eat the fruit
 - [x] Full Collition detection
 - [x] Simple interface with score counting
-- [ ] Configurable target FPS
+- [x] Configurable target FPS
 
 </br>
 </br>
