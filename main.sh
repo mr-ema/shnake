@@ -34,7 +34,7 @@ VERSION="1.0"
 
 BLANK_CANVAS=""
 TARGET_FPS=60
-FRAME_INTERVAL=$((1000 / TARGET_FPS))
+FRAME_INTERVAL=$(echo "scale=5; 1.0 / $TARGET_FPS" | bc)
 
 SCREEN_WIDTH=$(tput cols)
 SCREEN_HEIGHT=$(tput lines)
@@ -81,7 +81,7 @@ while [ $# -gt 0 ]; do
         case "$1" in
                 --set-target-fps=*)
                         TARGET_FPS="${1#*=}"
-                        FRAME_INTERVAL=$((1000 / TARGET_FPS))
+                        FRAME_INTERVAL=$(echo "scale=5; 1.0 / $TARGET_FPS" | bc)
                         shift 1
                 ;;
                 *)
@@ -232,10 +232,10 @@ insert_submatrix() {
 }
 
 draw_game_interface() {
-        score_x="$START_BOARD_X"
-        score_y=$((START_BOARD_Y - 2))
+        local_score_x="$START_BOARD_X"
+        local_score_y=$((START_BOARD_Y - 2))
 
-        game_canvas=$(draw_text "$game_canvas" "$SCREEN_WIDTH" "Score: $score" "$score_x" "$score_y")
+        game_canvas=$(draw_text "$game_canvas" "$SCREEN_WIDTH" "Score: $score" "$local_score_x" "$local_score_y")
 }
 
 update_snake_body() {
@@ -338,10 +338,10 @@ generate_fruit() {
                 fruit_x=$((RANDOM % BOARD_WIDTH + START_BOARD_X))
                 fruit_y=$((RANDOM % BOARD_HEIGHT + START_BOARD_Y))
         else
-                current_time=$(date +%s)
+                local_current_time=$(date +%S)
 
-                fruit_x=$((current_time % BOARD_WIDTH + START_BOARD_X))
-                fruit_y=$((current_time % BOARD_HEIGHT + START_BOARD_Y))
+                fruit_x=$((local_current_time % BOARD_WIDTH + START_BOARD_X))
+                fruit_y=$((local_current_time % BOARD_HEIGHT + START_BOARD_Y))
         fi
 }
 
@@ -379,7 +379,7 @@ init_game() {
 init_game
 
 while true; do
-        start_time=$(date +%s)  # Get the start time of the frame update
+        start_time=$(date +%S)  # Get the start time of the frame update
 
         draw_game
         pressed_key=$(read_char)
@@ -387,10 +387,12 @@ while true; do
         move_snake "$pressed_key"
         check_collision
 
-        end_time=$(date +%s)
-        elapsed_time=$((end_time - start_time))
+        end_time=$(date +%S)
+        elapsed_time=$(echo "$end_time - $start_time" | bc)
 
         # Calculate the time to sleep to achieve the target FPS
-        sleep_time=$((FRAME_INTERVAL - elapsed_time))
-        [ $sleep_time -gt 0 ] && sleep "$((sleep_time / 1000))"
+        sleep_time=$(echo "$FRAME_INTERVAL - $elapsed_time" | bc)
+        if [ "$(echo "$sleep_time > 0" | bc)" -eq 1 ]; then
+                sleep "$sleep_time"
+        fi
 done
