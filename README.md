@@ -20,11 +20,36 @@ Simple project of the classic snake game implemented in POSIX shell script.
 </br>
 </br>
 
-## Tested and Working Shells 
+## Tested Shells 
 - [x] Zsh
 - [x] Bash
 - [x] Dash
 - [x] Termux
+
+</br>
+</br>
+
+## Compatibility and Dependencies
+This shell script is designed to be POSIX
+compatible, following the standards set by the [POSIX
+specification](https://pubs.opengroup.org/onlinepubs/9699919799/). This
+means that it should run on any POSIX-compliant shell, which includes
+most Unix-like systems.
+
+### Dependencies
+However, while the script adheres to POSIX standards, there are a few
+commands used that are not guaranteed to be available on all operating
+systems and you may need to install:
+
+- **bc:** The script uses `bc` (basic calculator) for performing precise
+floating-point arithmetic calculations. While `bc` is POSIX-defined
+and commonly available, it might not be installed on some minimal or
+specialized environments.
+
+- **tput:** The script uses `tput` to control terminal colors and cursor
+movement, enhancing the visual aspect of the game. Like `bc`, `tput`
+is POSIX-defined but might be missing on certain systems, especially
+headless or minimal installations.
 
 </br>
 </br>
