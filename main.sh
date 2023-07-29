@@ -34,7 +34,7 @@ VERSION="1.0"
 
 BLANK_CANVAS=""
 TARGET_FPS=60
-FRAME_INTERVAL=$(echo "scale=5; 1.0 / $TARGET_FPS" | bc)
+FRAME_INTERVAL=$(echo "scale=3; 1.0 / $TARGET_FPS" | bc)
 
 SCREEN_WIDTH=$(tput cols)
 SCREEN_HEIGHT=$(tput lines)
@@ -81,7 +81,7 @@ while [ $# -gt 0 ]; do
         case "$1" in
                 --set-target-fps=*)
                         TARGET_FPS="${1#*=}"
-                        FRAME_INTERVAL=$(echo "scale=5; 1.0 / $TARGET_FPS" | bc)
+                        FRAME_INTERVAL=$(echo "scale=3; 1.0 / $TARGET_FPS" | bc)
                         shift 1
                 ;;
                 *)
