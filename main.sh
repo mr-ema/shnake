@@ -101,6 +101,24 @@ read_char() {
         echo "$char"
 }
 
+get_current_seconds() {
+        local_hour=$(date +%H)
+        local_minute=$(date +%M)
+        local_seconds=$(date +%S)
+
+        # Preserve leading zeros for hour and minute components
+        local_hour="${local_hour#0}"
+        local_minute="${local_minute#0}"
+
+        if [ "$local_hour" -lt 1 ]; then
+                local_hour="12"
+        fi
+
+        local_total_seconds=$(echo "($local_hour * 3600) + ($local_minute * 60) + $local_seconds" | bc)
+
+        echo "$local_total_seconds"
+}
+
 # This function draws the given text string onto a canvas represented by a string,
 # starting from the specified position (start_x, start_y). The text will be inserted
 # character by character at the provided coordinates, moving from left to right along
@@ -379,7 +397,7 @@ init_game() {
 init_game
 
 while true; do
-        start_time=$(date +%S)  # Get the start time of the frame update
+        start_time=$(get_current_seconds)
 
         draw_game
         pressed_key=$(read_char)
@@ -387,7 +405,7 @@ while true; do
         move_snake "$pressed_key"
         check_collision
 
-        end_time=$(date +%S)
+        end_time=$(get_current_seconds)
         elapsed_time=$(echo "$end_time - $start_time" | bc)
 
         # Calculate the time to sleep to achieve the target FPS
