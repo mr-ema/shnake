@@ -20,6 +20,12 @@ Simple project of the classic snake game implemented in POSIX shell script.
 </br>
 </br>
 
+## Demo
+![Demo](https://github.com/mr-ema/shnake/blob/main/demo.gif)
+
+</br>
+</br>
+
 ## Tested Shells 
 - [x] Zsh
 - [x] Bash
