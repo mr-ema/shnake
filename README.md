@@ -1,11 +1,17 @@
 # SHNAKE
-Simple project of the classic snake game implemented in POSIX shell script.
+Simple for-fun project of the classic snake game implemented in POSIX shell script.
 
 </br>
 
 ## Resources
 - [Shell Check](https://www.shellcheck.net/)
 - [POSIX Standards](https://pubs.opengroup.org/onlinepubs/9699919799/)
+
+</br>
+</br>
+
+## Why POSIX Shell?
+Why not, my friend! Sometimes, you just gotta shell-ebrate simplicity.
 
 </br>
 </br>
@@ -21,7 +27,7 @@ Simple project of the classic snake game implemented in POSIX shell script.
 </br>
 
 ## Demo
-![Demo](https://github.com/mr-ema/shnake/blob/main/demo.gif)
+![Demo](https://github.com/mr-ema/shnake/blob/main/docs/demo.gif)
 
 </br>
 </br>
