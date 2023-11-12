@@ -17,6 +17,7 @@
 
 ########################### Source Files ##########################
 source "./utils.sh"
+source "./bot.sh"
 
 SAVED_TTY_SETTINGS="$(stty -g)" # Save current terminal settings to restore them later
 
@@ -255,6 +256,27 @@ player_mainloop() {
         done
 }
 
+bot_main_loop() {
+        while true; do
+                start_time=$(get_current_seconds)
+
+                draw_game
+                update_snake_body
+                b0000
+                move_bot
+                check_collision
+
+                end_time=$(get_current_seconds)
+                elapsed_time=$(echo "$end_time - $start_time" | bc)
+
+                # Calculate the time to sleep to achieve the target FPS
+                sleep_time=$(echo "$FRAME_INTERVAL - $elapsed_time" | bc)
+                if [ "$(echo "$sleep_time > 0" | bc)" -eq 1 ]; then
+                        sleep "$sleep_time"
+                fi
+        done
+}
+
 ################################# MAIN LOOP #################################
 init_game
-player_mainloop
+bot_main_loop
