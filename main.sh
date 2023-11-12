@@ -15,6 +15,9 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 # -----------------------------------------------------------------------------
 
+########################### Source Files ##########################
+source "./utils.sh"
+
 SAVED_TTY_SETTINGS="$(stty -g)" # Save current terminal settings to restore them later
 
 cleanup() {
@@ -72,7 +75,7 @@ tail_y="$START_BOARD_Y"
 # from head to tail example: [xy: "x0y1 x1y0 x2y3 x5y5"]
 snake_body_xy=""
 
-direction="RIGHT"
+direction="RIGHT" # "RIGHT"|"LEFT"|"UP"|"DOWN"
 pressed_key=""
 score=0
 
@@ -92,163 +95,6 @@ while [ $# -gt 0 ]; do
 done
 
 ###################### FUNCTIONS ######################
-read_char() {
-        # Set the terminal read single characters
-        stty -icanon -echo min 0 time 0
-  
-        char=$(dd bs=1 count=1 2>/dev/null)
-
-        echo "$char"
-}
-
-get_current_seconds() {
-        local_hour=$(date +%H)
-        local_minute=$(date +%M)
-        local_seconds=$(date +%S)
-
-        # Preserve leading zeros for hour and minute components
-        local_hour="${local_hour#0}"
-        local_minute="${local_minute#0}"
-
-        if [ "$local_hour" -lt 1 ]; then
-                local_hour="12"
-        fi
-
-        local_total_seconds=$(echo "($local_hour * 3600) + ($local_minute * 60) + $local_seconds" | bc)
-
-        echo "$local_total_seconds"
-}
-
-# This function draws the given text string onto a canvas represented by a string,
-# starting from the specified position (start_x, start_y). The text will be inserted
-# character by character at the provided coordinates, moving from left to right along
-# the x-axis. The canvas is assumed to be a single string with newline escape '\n' used
-# as a row separator.
-#
-# Parameters:
-#   canvas     - The original canvas represented as a single string.
-#   canvas_cols - The number of columns in the canvas.
-#   str        - The text string to be drawn on the canvas.
-#   start_x    - The x-coordinate (column) of the starting position for drawing the text.
-#   start_y    - The y-coordinate (row) of the starting position for drawing the text.
-#
-# Returns:
-#   The modified canvas with the text drawn at the specified position.
-#
-draw_text() {
-        local_canvas="$1"
-        local_canvas_cols="$2"
-        local_str="$3"
-        local_start_x="$4"
-        local_start_y="$5"
-
-        while [ -n "$local_str" ]; do
-                char="${local_str%"${local_str#?}"}" # extract first char
-
-                text_idx=$((local_start_y * (local_canvas_cols + 2) + local_start_x))
-                local_canvas=$(set_char_at_index "$local_canvas" "$text_idx" "$char")
-
-                local_str="${local_str#?}" # remove first char
-                local_start_x=$((local_start_x + 1))
-        done
-
-        printf "%s" "$local_canvas"
-}
-
-# This function takes an input string, an index, and a new character, and it returns
-# the input string with the character at the specified index replaced by the new character.
-# If the index is out of bounds (less than 0 or greater than the length of the string),
-# the original string is returned without any modifications.
-#
-# Parameters:
-#   str         - The input string where the character will be replaced.
-#   idx         - The index of the character to be replaced (0-based index).
-#   new_char    - The new character to be placed at the specified index.
-#
-# Returns:
-#   The modified string with the character at the given index replaced,
-#   or the original string if the index is out of bounds.
-#
-set_char_at_index() {
-        local_str="$1"
-        local_idx="$2"
-        local_new_char="$3"
-
-        if [ "$local_idx" -ge 0 ] && [ "$local_idx" -lt ${#local_str} ]; then
-                printf "%s" "$local_str" | sed "s/./${local_new_char}/$((local_idx + 1))"
-        else
-                printf "%s" "$local_str"
-        fi
-}
-
-# This function generates a character matrix using the provided character for all elements.
-# The matrix is represented as a single string, with rows separated by newline characters ("\n").
-# The number of rows and columns can be controlled using the parameters.
-#
-# Parameters:
-#   char  - The character to be used for all elements in the matrix.
-#   rows  - The number of rows in the matrix.
-#   cols  - The number of columns in the matrix.
-#
-# Returns:
-#   The generated character matrix with the specified number of rows and columns,
-#   where each element is represented by the provided character.
-#
-generate_char_matrix() {
-        local_char="$1"
-        local_rows="$2"
-        local_cols="$3"
-
-        local_matrix=""
-        for i in $(seq 1 $((local_cols))); do
-                local_matrix="${local_matrix}${local_char}"
-        done
-
-        local_row_chars="$local_matrix"
-        for i in $(seq 2 $((local_rows))); do
-                local_matrix="${local_matrix}\n${local_row_chars}"
-        done
-
-        printf "%s" "$local_matrix"
-}
-
-# This function inserts a smaller submatrix represented by the provided character
-# into a larger matrix (canvas). The submatrix is positioned within the canvas
-# starting from the specified top-left corner coordinates (start_x, start_y).
-#
-# Parameters:
-#   matrix          - The original matrix (canvas) where the submatrix will be inserted.
-#   matrix_cols     - The number of columns in the original matrix (canvas).
-#   submatrix_char  - The character representing the submatrix elements.
-#   start_x         - The x-coordinate (column) of the top-left corner of the submatrix.
-#   start_y         - The y-coordinate (row) of the top-left corner of the submatrix.
-#   end_x           - The x-coordinate (column) of the bottom-right corner of the submatrix.
-#   end_y           - The y-coordinate (row) of the bottom-right corner of the submatrix.
-#
-# Returns:
-#   The modified canvas with the submatrix inserted at the specified position.
-#
-insert_submatrix() {
-        local_matrix="$1"
-        local_matrix_cols="$2"
-        local_submatrix_char="$3"
-        local_start_x="$4"
-        local_start_y="$5"
-        local_end_x="$6"
-        local_end_y="$7"
-
-        for y in $(seq $((local_start_y)) $((local_end_y - 1))); do
-                for x in $(seq $((local_start_x)) $((local_end_x - 1))); do
-                        # We do (local_matrix_cols + 2) because of the newline escape '\n',
-                        # which serves as a separator between rows in the matrix.
-                        local_matrix_idx=$((y * (local_matrix_cols + 2) + x))
-                        local_matrix=$(set_char_at_index "$local_matrix" "$local_matrix_idx" "$local_submatrix_char")
-                done
-        done
-
-        printf "%s" "$local_matrix"
-}
-
 draw_game_interface() {
         local_score_x="$START_BOARD_X"
         local_score_y=$((START_BOARD_Y - 2))
@@ -352,15 +198,8 @@ move_snake() {
 }
 
 generate_fruit() {
-        if [ -n "$RANDOM" ]; then
-                fruit_x=$((RANDOM % BOARD_WIDTH + START_BOARD_X))
-                fruit_y=$((RANDOM % BOARD_HEIGHT + START_BOARD_Y))
-        else
-                local_current_time=$(date +%S)
-
-                fruit_x=$((local_current_time % BOARD_WIDTH + START_BOARD_X))
-                fruit_y=$((local_current_time % BOARD_HEIGHT + START_BOARD_Y))
-        fi
+        fruit_x=$(( $(random) % BOARD_WIDTH + START_BOARD_X ))
+        fruit_y=$(( $(random) % BOARD_HEIGHT + START_BOARD_Y ))
 }
 
 check_collision() {
@@ -394,23 +233,28 @@ init_game() {
         game_canvas=$(insert_submatrix "$BLANK_CANVAS" "$SCREEN_WIDTH" "$BOARD_CHAR" "$START_BOARD_X" "$START_BOARD_Y" "$END_BOARD_X" "$END_BOARD_Y")
         echo "Game board generated"
 }
+
+player_mainloop() {
+        while true; do
+                start_time=$(get_current_seconds)
+
+                draw_game
+                pressed_key=$(read_char)
+                update_snake_body
+                move_snake "$pressed_key"
+                check_collision
+
+                end_time=$(get_current_seconds)
+                elapsed_time=$(echo "$end_time - $start_time" | bc)
+
+                # Calculate the time to sleep to achieve the target FPS
+                sleep_time=$(echo "$FRAME_INTERVAL - $elapsed_time" | bc)
+                if [ "$(echo "$sleep_time > 0" | bc)" -eq 1 ]; then
+                        sleep "$sleep_time"
+                fi
+        done
+}
+
+################################# MAIN LOOP #################################
 init_game
-
-while true; do
-        start_time=$(get_current_seconds)
-
-        draw_game
-        pressed_key=$(read_char)
-        update_snake_body
-        move_snake "$pressed_key"
-        check_collision
-
-        end_time=$(get_current_seconds)
-        elapsed_time=$(echo "$end_time - $start_time" | bc)
-
-        # Calculate the time to sleep to achieve the target FPS
-        sleep_time=$(echo "$FRAME_INTERVAL - $elapsed_time" | bc)
-        if [ "$(echo "$sleep_time > 0" | bc)" -eq 1 ]; then
-                sleep "$sleep_time"
-        fi
-done
+player_mainloop
