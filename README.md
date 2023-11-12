@@ -67,7 +67,7 @@ headless or minimal installations.
 </br>
 
 ## How To Play
-1. Clone the repository or download the script or do a copy paste.
+1. Clone the repository.
 2. Open your terminal and navigate to the directory where the script is located.
 3. Make sure you have execute permissions for the script: `chmod +x main.sh`.
 4. Run the game: `./main.sh`.
